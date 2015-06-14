@@ -8,6 +8,10 @@ Useful with [LiveReload Chrome plugin](https://chrome.google.com/webstore/detail
 
 ## Usage
 
+```bash
+$ boot livereload --help
+```
+
 ## License
 
 Copyright © 2015 Juho Teperi
