@@ -12,7 +12,7 @@
 (defn asset-pathify [url asset-path]
   (if asset-path
     (if (.startsWith url asset-path)
-      (string/replace url (re-pattern (str "^" asset-path "/")) ""))
+      (string/replace url (re-pattern (str "^" (string/replace asset-path #"^/" "") "/")) ""))
     url))
 
 (core/deftask livereload
