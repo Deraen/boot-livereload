@@ -4,6 +4,8 @@
 [Boot](https://github.com/boot-clj/boot) task to create a [LiveReload.js](http://livereload.com/) server.
 Useful with [LiveReload Chrome plugin](https://chrome.google.com/webstore/detail/livereload/jnihajbhpnppcggbcgedagnkighmdlei).
 
+Uses [clj-livereload](https://github.com/bhurlow/clj-livereload).
+
 * Provides the `livereload` task
 
 ## Usage
