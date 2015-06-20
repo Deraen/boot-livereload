@@ -2,7 +2,7 @@
   :resource-paths #{"src"}
   :dependencies   '[[org.clojure/clojure "1.6.0"       :scope "provided"]
                     [boot/core           "2.1.2"       :scope "provided"]
-                    [adzerk/bootlaces    "0.1.8"       :scope "test"]
+                    [adzerk/bootlaces    "0.1.11"      :scope "test"]
                     [clj-livereload      "0.2.0"       :scope "test"]])
 
 (require '[adzerk.bootlaces :refer :all])
