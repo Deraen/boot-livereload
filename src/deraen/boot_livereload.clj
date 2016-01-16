@@ -7,7 +7,7 @@
             [boot.util       :as util]))
 
 (def ^:private deps
-  '[[clj-livereload "0.2.0"]])
+  '[[org.clojars.deraen/clj-livereload "0.2.1"]])
 
 (defn asset-pathify [url asset-path]
   (if asset-path
