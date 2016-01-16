@@ -5,7 +5,7 @@
 Useful with [LiveReload Chrome plugin](https://chrome.google.com/webstore/detail/livereload/jnihajbhpnppcggbcgedagnkighmdlei).
 Uses [clj-livereload](https://github.com/bhurlow/clj-livereload).
 
-This works well with static page generators such as [perun](https://github.com/adzerk-oss/boot-reload).
+This works well with static page generators such as [Perun](https://github.com/hashobject/perun).
 For use with ClojureScript apps, you should be looking at [boot-reload](https://github.com/adzerk-oss/boot-reload)
 instead.
 
