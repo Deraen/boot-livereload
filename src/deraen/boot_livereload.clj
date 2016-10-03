@@ -18,16 +18,16 @@
 (core/deftask livereload
   "Start LiveReload.js server.
 
-   If you are serving files from certain prefix inside the filset, you should
+   If you are serving files from certain prefix inside the fileset, you should
    set the asset-path options. The asset-path is stripped from start of urls
    before reload message is sent to the browser.
 
-   If you want to make sure full reloads don't happen when certains files
-   change you can use filter to set a regex which the urls have to match.
+   If you want to make sure full reloads don't happen when certain files
+   change, you can use filter to set a regex which the urls have to match.
    E.g. .css.map or .less files might cause reloads when LESS is compiled.
    Example: #\"\\.(css|html|js)$\".
 
-   Using non-standard port is not recommended as then the browser plugin can't
+   Using a non-standard port is not recommended as then the browser plugin can't
    connect to the server and you'll have to manually add the snippet to your
    html. http://feedback.livereload.com/knowledgebase/articles/86180-how-do-i-add-the-script-tag-manually-"
   [a asset-path PATH   str   "asset-path"
