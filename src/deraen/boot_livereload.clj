@@ -1,19 +1,32 @@
 (ns deraen.boot-livereload
-  {:boot/export-tasks true}
   (:require [clojure.java.io :as io]
             [clojure.string  :as string]
-            [boot.pod        :as pod]
-            [boot.core       :as core]
-            [boot.util       :as util]))
+            [boot.pod :as pod]
+            [boot.core :as core]
+            [boot.util :as util]))
 
 (def ^:private deps
-  '[[org.clojars.deraen/clj-livereload "0.2.1"]])
+  '[[cheshire "5.7.0"]
+    [ring "1.5.1"]
+    [http-kit "2.2.0"]
+    [org.webjars.npm/livereload-js "2.2.2"]])
 
 (defn asset-pathify [url asset-path]
   (if asset-path
     (if (.startsWith url asset-path)
       (string/replace url (re-pattern (str "^" (string/replace asset-path #"^/" "") "/")) ""))
     url))
+
+(defn snippet [port]
+  (str "<script>document.write('<script src=\"http://' + (location.host || 'localhost').split(':')[0] + ':" port "/livereload.js?snipver=1\"></' + 'script>')</script></body>"))
+
+(snippet 1234)
+
+(defn add-snippet [tmp tmp-file port]
+  (let [out-file (io/file tmp (core/tmp-path tmp-file))]
+    (let [in-file (core/tmp-file tmp-file)]
+      (io/make-parents out-file)
+      (spit out-file (string/replace (slurp in-file) #"</body>" (snippet port))))))
 
 (core/deftask livereload
   "Start LiveReload.js server.
@@ -27,13 +40,14 @@
    E.g. .css.map or .less files might cause reloads when LESS is compiled.
    Example: #\"\\.(css|html|js)$\".
 
-   Using a non-standard port is not recommended as then the browser plugin can't
-   connect to the server and you'll have to manually add the snippet to your
-   html. http://feedback.livereload.com/knowledgebase/articles/86180-how-do-i-add-the-script-tag-manually-"
-  [a asset-path PATH   str   "asset-path"
-   p port       PORT   int   "port"
-   s silent            bool  "Silence all output."
-   f filter     FILTER regex "filter"]
+   Default port is 35729 and can be used with the LiveReload browser extension
+   (https://chrome.google.com/webstore/detail/livereload/jnihajbhpnppcggbcgedagnkighmdlei?hl=en).
+   If the snippet option is enabled, script is added to any HTML files automatically
+   and random port is used."
+  [a asset-path PATH   str   "Asset-path"
+   s snippet           bool  "Add script automatically to HTML files"
+   p port       PORT   int   "Port (if snippet enabled, default is random, else default is 35729)"
+   f filter     FILTER regex "Filter"]
   (let [pod (-> (core/get-env)
                 (update-in [:dependencies] into deps)
                 pod/make-pod
@@ -42,15 +56,23 @@
         debug (>= @util/*verbosity* 2)
         start (delay
                 (pod/with-call-in @pod
-                  (clj-livereload.server/start! {:port ~port
-                                                 :silent? ~silent
-                                                 :debug? ~debug})))]
-    (core/with-pre-wrap fileset
-      @start
-      (let [changes (core/input-files (core/fileset-diff @prev fileset :hash))]
-        (doseq [change changes
-                :let [url (asset-pathify (core/tmp-path change) asset-path)]
-                :when (and url (or (not filter) (re-find filter url)))]
-          (pod/with-call-in @pod
-            (clj-livereload.server/send-reload-msg! ~url)))
-        (reset! prev fileset)))))
+                  (deraen.boot-livereload.impl/start! {:port ~(or port (if snippet 0 35729))})))
+        tmp (core/tmp-dir!)]
+    (fn [next-handler]
+      (fn [fileset]
+        (let [{:keys [port]} @start]
+
+          (doseq [html-file (->> fileset
+                                 (core/fileset-diff @prev fileset :hash)
+                                 (core/input-files)
+                                 (core/by-ext [".html"]))]
+            (add-snippet tmp html-file port))
+
+          (let [changes (core/input-files (core/fileset-diff @prev fileset :hash))]
+            (doseq [change changes
+                    :let [url (asset-pathify (core/tmp-path change) asset-path)]
+                    :when (and url (or (not filter) (re-find filter url)))]
+              (pod/with-call-in @pod (deraen.boot-livereload.impl/send-reload-msg! ~url)))
+            (reset! prev fileset))
+
+          (-> fileset (core/add-resource tmp) core/commit! next-handler))))))
