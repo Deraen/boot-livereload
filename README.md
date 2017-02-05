@@ -19,6 +19,6 @@ $ boot livereload --help
 
 ## License
 
-Copyright © 2015 Juho Teperi
+Copyright © 2015-2017 Juho Teperi
 
 Distributed under the MIT License.
