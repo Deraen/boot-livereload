@@ -11,7 +11,7 @@
     [http-kit "2.2.0"]
     [org.webjars.npm/livereload-js "2.2.2"]])
 
-(defn asset-pathify [url asset-path]
+(defn ->asset-path [url asset-path]
   (if asset-path
     (if (.startsWith url asset-path)
       (string/replace url (re-pattern (str "^" (string/replace asset-path #"^/" "") "/")) ""))
@@ -19,8 +19,6 @@
 
 (defn snippet [port]
   (str "<script>document.write('<script src=\"http://' + (location.host || 'localhost').split(':')[0] + ':" port "/livereload.js?snipver=1\"></' + 'script>')</script></body>"))
-
-(snippet 1234)
 
 (defn add-snippet [tmp tmp-file port]
   (let [out-file (io/file tmp (core/tmp-path tmp-file))]
@@ -62,17 +60,29 @@
       (fn [fileset]
         (let [{:keys [port]} @start]
 
-          (doseq [html-file (->> fileset
-                                 (core/fileset-diff @prev fileset :hash)
-                                 (core/input-files)
-                                 (core/by-ext [".html"]))]
-            (add-snippet tmp html-file port))
+          (when snippet
+            (doseq [removed-file (->> (core/fileset-removed @prev fileset)
+                                      (core/input-files)
+                                      (core/by-ext [".html"]))]
+              (io/delete-file (io/file tmp (core/tmp-path removed-file))))
 
-          (let [changes (core/input-files (core/fileset-diff @prev fileset :hash))]
-            (doseq [change changes
-                    :let [url (asset-pathify (core/tmp-path change) asset-path)]
+            (doseq [html-file (->> (core/fileset-diff @prev fileset :hash)
+                                   (core/input-files)
+                                   (core/by-ext [".html"]))]
+              (util/dbug (format "Adding LR snippet to file %s\n" (core/tmp-path html-file)))
+              (add-snippet tmp html-file port)))
+
+          (let [fileset' fileset
+                ;; Write modified HTML to disk and run next tasks (e.g. target)
+                ;; to ensure that files are available when reloading them.
+                fileset (-> fileset (core/add-resource tmp) core/commit! next-handler)]
+            (doseq [change (->> (core/fileset-diff @prev fileset :hash)
+                                (core/input-files))
+                    :let [url (->asset-path (core/tmp-path change) asset-path)]
                     :when (and url (or (not filter) (re-find filter url)))]
-              (pod/with-call-in @pod (deraen.boot-livereload.impl/send-reload-msg! ~url)))
-            (reset! prev fileset))
+              (pod/with-call-in @pod
+                (deraen.boot-livereload.impl/send-reload-msg! ~url)))
 
-          (-> fileset (core/add-resource tmp) core/commit! next-handler))))))
+            (reset! prev fileset')
+
+            fileset))))))

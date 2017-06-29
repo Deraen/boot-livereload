@@ -7,7 +7,7 @@
                   [http-kit "2.2.0" :scope "test"]
                   [org.webjars.npm/livereload-js "2.2.2" :scope "test"]])
 
-(def +version+ "0.2.0")
+(def +version+ "0.2.1")
 
 (task-options!
   pom {:project     'deraen/boot-livereload
