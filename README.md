@@ -8,6 +8,7 @@ For use with ClojureScript apps, you should be looking at [boot-reload](https://
 instead.
 
 * Provides the `livereload` task
+* Doesn't provide HTTP server to serve your files, instead compose with another Boot task, like [boot-alt-http](https://github.com/metosin/boot-alt-http)
 
 ## Usage
 
