@@ -53,8 +53,9 @@
         prev (atom nil)
         debug (>= @util/*verbosity* 2)
         start (delay
-                (pod/with-call-in @pod
-                  (deraen.boot-livereload.impl/start! {:port ~(or port (if snippet 0 35729))})))
+               (pod/with-call-in @pod
+                 (deraen.boot-livereload.impl/start! {:port ~(or port (if snippet 0 35729))
+                                                      :asset-path ~asset-path})))
         tmp (core/tmp-dir!)]
     (fn [next-handler]
       (fn [fileset]
