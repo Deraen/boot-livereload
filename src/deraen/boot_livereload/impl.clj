@@ -2,6 +2,7 @@
   "From https://github.com/bhurlow/clj-livereload/blob/master/src/clj_livereload/core.clj"
   (:require [org.httpkit.server :refer [run-server with-channel on-close on-receive send! open?]]
             [ring.util.response :as resp]
+            [ring.middleware.resource :as mwres]
             [cheshire.core :as json]))
 
 (defn- hello-message []
@@ -37,18 +38,21 @@
       (fn [_]
         (swap! state update-in [:reload-channels] disj channel)))))
 
-(defn- handler [state]
+(defn- wrap-livereload [handler state]
   (fn [req]
     (if (= :get (:request-method req))
       (case (:uri req)
         "/livereload.js" (-> (resp/resource-response "META-INF/resources/webjars/livereload-js/2.2.2/dist/livereload.js" {:root ""})
                              (resp/content-type "application/javascript"))
-        "/livereload" (handle-livereload state req)))))
+        "/livereload" (handle-livereload state req)
+        (handler req)))))
 
 (defn start
-  [{:keys [port]}]
+  [{:keys [port asset-path]}]
   (let [state (atom {:reload-channels #{}})
-        http-kit (run-server (handler state) {:port port})]
+        http-kit (run-server (-> (fn [req] (mwres/resource-request req asset-path))
+                                 (wrap-livereload state))
+                             {:port port})]
     {:state state
      :http-kit http-kit
      :port (:local-port (meta http-kit))}))
